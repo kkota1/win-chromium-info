@@ -1,6 +1,8 @@
 # modified windows setup
 Due to bloat/omissions in official
 
+Builds take forever unless you have 64GB RAM and 20+ cores. Use cloud server
+
 ## System requirements
 
 * A 64-bit Intel machine with at least 8GB of RAM. More than 16GB is highly
@@ -104,67 +106,11 @@ with different configurations. To create a build directory:
 $ gn gen out/Default
 ```
 
-* You only have to run this once for each new build directory, Ninja will
-  update the build files as needed.
-* You can replace `Default` with another name, but
-  it should be a subdirectory of `out`.
-* For other build arguments, including release settings or using an alternate
-  version of Visual Studio, see [GN build
-  configuration](https://www.chromium.org/developers/gn-build-configuration).
-  The default will be a debug component build matching the current host
-  operating system and CPU.
-* For more info on GN, run `gn help` on the command line or read the [quick
-  start guide](https://gn.googlesource.com/gn/+/main/docs/quick_start.md).
-
 ### Faster builds
 
-* Reduce file system overhead by excluding build directories from
-  antivirus and indexing software.
-* Store the build tree on a fast disk (preferably SSD).
-* The more cores the better (20+ is not excessive) and lots of RAM is needed
-(64 GB is not excessive).
-
-There are some gn flags that can improve build speeds. You can specify these
-in the editor that appears when you create your output directory
-(`gn args out/Default`) or on the gn gen command line
-(`gn gen out/Default --args="is_component_build = true is_debug = true"`).
-Some helpful settings to consider using include:
-* `is_component_build = true` - this uses more, smaller DLLs, and may avoid
-having to relink chrome.dll after every change.
-* `enable_nacl = false` - this disables Native Client which is usually not
-needed for local builds.
-* `target_cpu = "x86"` - x86 builds may be slightly faster than x64 builds. Note
-that if you set this but don't set `enable_nacl = false` then build times may
-get worse.
-* `blink_symbol_level = 0` - turn off source-level debugging for
-blink to reduce build times, appropriate if you don't plan to debug blink.
-* `v8_symbol_level = 0` - turn off source-level debugging for v8 to reduce
-build times, appropriate if you don't plan to debug v8.
-
-In order to speed up linking you can set `symbol_level = 1` or
-`symbol_level = 0` - these options reduce the work the compiler and linker have
-to do. With `symbol_level = 1` the compiler emits file name and line number
-information so you can still do source-level debugging but there will be no
-local variable or type information. With `symbol_level = 0` there is no
-source-level debugging but call stacks still have function names. Changing
-`symbol_level` requires recompiling everything.
-
-In addition, Google employees should use goma, a distributed compilation system.
-Detailed information is available internally but the relevant gn arg is:
-* `use_goma = true`
-
-To get any benefit from goma it is important to pass a large -j value to ninja.
-A good default is 10\*numCores to 20\*numCores. If you run autoninja then it
-will automatically pass an appropriate -j value to ninja for goma or not.
-
 ```shell
-$ autoninja -C out\Default chrome
+gn gen out/Default --args="is_component_build = true is_debug = true symbol_level = 1 blink_symbol_level = 0 v8_symbol_level = 0"
 ```
-
-When invoking ninja specify 'chrome' as the target to avoid building all test
-binaries as well.
-
-Still, builds will take many hours on many machines.
 
 #### Use SCCACHE
 
